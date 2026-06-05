@@ -6911,8 +6911,12 @@ static int poll_active_workers(struct work_queue *q, int stoptime, struct link *
 		struct work_queue_worker *w;
 		hash_table_firstkey(q->workers_with_available_results);
 		while(hash_table_nextkey(q->workers_with_available_results,&key,(void**)&w)) {
-			get_available_results(q, w);
-			hash_table_remove(q->workers_with_available_results, key);
+			work_queue_result_code_t result = get_available_results(q, w);
+			if(result == WQ_SUCCESS) {
+				hash_table_remove(q->workers_with_available_results, key);
+			} else {
+				handle_worker_failure(q, w);
+			}
 			hash_table_firstkey(q->workers_with_available_results);
 		}
 	}
@@ -7997,7 +8001,7 @@ int work_queue_specify_transactions_log(struct work_queue *q, const char *logfil
 
 		fprintf(q->transactions_logfile, "# time manager_pid MANAGER START|END\n");
 		fprintf(q->transactions_logfile, "# time manager_pid WORKER worker_id host:port CONNECTION\n");
-		fprintf(q->transactions_logfile, "# time manager_pid WORKER worker_id host:port DISCONNECTION (UNKNOWN|IDLE_OUT|FAST_ABORT|FAILURE|STATUS_WORKER|EXPLICIT\n");
+		fprintf(q->transactions_logfile, "# time manager_pid WORKER worker_id host:port DISCONNECTION (UNKNOWN|IDLE_OUT|FAST_ABORT|FAILURE|STATUS_WORKER|EXPLICIT)\n");
 		fprintf(q->transactions_logfile, "# time manager_pid WORKER worker_id RESOURCES {resources}\n");
 		fprintf(q->transactions_logfile, "# time manager_pid CATEGORY name MAX {resources_max_per_task}\n");
 		fprintf(q->transactions_logfile, "# time manager_pid CATEGORY name MIN {resources_min_per_task_per_worker}\n");

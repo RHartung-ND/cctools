@@ -337,11 +337,10 @@ bool seek_forward(struct skip_list_cursor *cur, int index)
 		return false;
 	}
 
-	cur->target = sl->head;
-	while (index >= 0) {
-		cur->target = cur->target->forward[0];
-
+	cur->target = sl->head->forward[0];
+	while (1) {
 		if (cur->target == sl->tail) {
+			cur->target = NULL;
 			return false;
 		}
 
@@ -352,10 +351,15 @@ bool seek_forward(struct skip_list_cursor *cur, int index)
 			struct skip_list_node *next = cur->target->forward[0];
 			delete_node(cur->target, sl);
 			cur->target = next;
+			debug(D_DEBUG, "skip_list seek_forward: FIXED dead node overshoot, continuing at next node");
 			continue;
 		}
 
+		if (index == 0) {
+			break;
+		}
 		index--;
+		cur->target = cur->target->forward[0];
 	}
 
 	skip_list_node_ref(cur->target);
@@ -373,11 +377,10 @@ bool seek_backward(struct skip_list_cursor *cur, int index)
 		return false;
 	}
 
-	cur->target = sl->tail;
-	while (index < 0) {
-		cur->target = cur->target->backward[0];
-
+	cur->target = sl->tail->backward[0];
+	while (1) {
 		if (cur->target == sl->head) {
+			cur->target = NULL;
 			return false;
 		}
 
@@ -388,10 +391,16 @@ bool seek_backward(struct skip_list_cursor *cur, int index)
 			struct skip_list_node *prev = cur->target->backward[0];
 			delete_node(cur->target, sl);
 			cur->target = prev;
+			debug(D_DEBUG, "skip_list seek_backward: FIXED dead node overshoot, continuing at prev node");
 			continue;
 		}
 
+		if (index == -1) {
+			break;
+		}
+
 		index++;
+		cur->target = cur->target->backward[0];
 	}
 
 	skip_list_node_ref(cur->target);
@@ -534,6 +543,8 @@ bool skip_list_get(struct skip_list_cursor *cur, void **item)
 {
 	debug_assert(cur);
 	if (!cur->target)
+		return false;
+	if (cur->target == cur->list->head || cur->target == cur->list->tail)
 		return false;
 	if (cur->target->dead)
 		return false;
