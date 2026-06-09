@@ -351,7 +351,6 @@ bool seek_forward(struct skip_list_cursor *cur, int index)
 			struct skip_list_node *next = cur->target->forward[0];
 			delete_node(cur->target, sl);
 			cur->target = next;
-			debug(D_DEBUG, "skip_list seek_forward: FIXED dead node overshoot, continuing at next node");
 			continue;
 		}
 
@@ -391,7 +390,6 @@ bool seek_backward(struct skip_list_cursor *cur, int index)
 			struct skip_list_node *prev = cur->target->backward[0];
 			delete_node(cur->target, sl);
 			cur->target = prev;
-			debug(D_DEBUG, "skip_list seek_backward: FIXED dead node overshoot, continuing at prev node");
 			continue;
 		}
 
